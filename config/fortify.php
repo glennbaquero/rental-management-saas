@@ -161,7 +161,7 @@ return [
     */
 
     'features' => [
-        Features::registration(),
+        // Registration is handled by TenantRegistrationController
         Features::resetPasswords(),
         Features::emailVerification(),
         Features::twoFactorAuthentication([

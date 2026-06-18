@@ -10,6 +10,7 @@ const name = page.props.name;
 defineProps<{
     title?: string;
     description?: string;
+    wide?: boolean;
 }>();
 
 const features = [
@@ -61,7 +62,7 @@ const features = [
 
         <!-- Right form panel -->
         <div class="flex h-full items-center justify-center overflow-y-auto py-10 lg:p-8">
-            <div class="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[440px]">
+            <div class="mx-auto flex w-full flex-col justify-center space-y-6" :class="wide ? 'max-w-3xl' : 'sm:w-[440px]'">
                 <div v-if="title || description" class="flex flex-col space-y-2 text-center">
                     <h1 v-if="title" class="text-xl font-medium tracking-tight">
                         {{ title }}

@@ -21,7 +21,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property array|null $features
  * @property bool $is_active
  */
-#[Fillable(['name', 'slug', 'description', 'price', 'billing_cycle', 'max_properties', 'max_units', 'max_users', 'features', 'is_active'])]
+#[Fillable(['name', 'slug', 'description', 'price', 'billing_cycle', 'max_properties', 'max_units', 'max_users', 'features', 'is_active', 'stripe_price_id'])]
 class SubscriptionPlan extends Model
 {
     use HasUuids;

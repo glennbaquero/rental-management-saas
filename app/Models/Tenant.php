@@ -21,6 +21,7 @@ class Tenant extends BaseTenant
             'timezone',
             'currency',
             'subscription_status',
+            'stripe_customer_id',
         ];
     }
 }

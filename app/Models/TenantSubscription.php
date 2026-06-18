@@ -19,7 +19,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $current_period_end
  * @property Carbon|null $canceled_at
  */
-#[Fillable(['tenant_id', 'plan_id', 'status', 'trial_ends_at', 'current_period_start', 'current_period_end', 'canceled_at'])]
+#[Fillable(['tenant_id', 'plan_id', 'status', 'trial_ends_at', 'current_period_start', 'current_period_end', 'canceled_at', 'stripe_subscription_id', 'stripe_payment_method_id'])]
 class TenantSubscription extends Model
 {
     use HasUuids;

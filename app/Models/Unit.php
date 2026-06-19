@@ -12,21 +12,13 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-/**
- * @property string $id
- * @property string $property_id
- * @property string|null $unit_type_id
- * @property string $unit_number
- * @property string|null $floor
- * @property float|null $area_sqm
- * @property int $bedrooms
- * @property int $bathrooms
- * @property float $rent_amount
- * @property float $deposit_amount
- * @property UnitStatus $status
- * @property string|null $notes
- */
-#[Fillable(['property_id', 'unit_type_id', 'unit_number', 'floor', 'area_sqm', 'bedrooms', 'bathrooms', 'rent_amount', 'deposit_amount', 'status', 'notes'])]
+#[Fillable([
+    'property_id', 'building_id', 'unit_type_id',
+    'unit_number', 'floor',
+    'area_sqm', 'max_occupants', 'bedrooms', 'bathrooms',
+    'rent_amount', 'deposit_amount',
+    'status', 'notes',
+])]
 class Unit extends Model
 {
     use HasUuids, SoftDeletes;
@@ -34,16 +26,21 @@ class Unit extends Model
     protected function casts(): array
     {
         return [
-            'status' => UnitStatus::class,
-            'rent_amount' => 'decimal:2',
+            'status'         => UnitStatus::class,
+            'rent_amount'    => 'decimal:2',
             'deposit_amount' => 'decimal:2',
-            'area_sqm' => 'decimal:2',
+            'area_sqm'       => 'decimal:2',
         ];
     }
 
     public function property(): BelongsTo
     {
         return $this->belongsTo(Property::class);
+    }
+
+    public function building(): BelongsTo
+    {
+        return $this->belongsTo(Building::class);
     }
 
     public function unitType(): BelongsTo
@@ -84,5 +81,25 @@ class Unit extends Model
     public function isAvailable(): bool
     {
         return $this->status === UnitStatus::Available;
+    }
+
+    public function scopeAvailable($query)
+    {
+        return $query->where('status', UnitStatus::Available);
+    }
+
+    public function scopeOccupied($query)
+    {
+        return $query->where('status', UnitStatus::Occupied);
+    }
+
+    public function scopeInBuilding($query, string $buildingId)
+    {
+        return $query->where('building_id', $buildingId);
+    }
+
+    public function scopeOfType($query, string $unitTypeId)
+    {
+        return $query->where('unit_type_id', $unitTypeId);
     }
 }

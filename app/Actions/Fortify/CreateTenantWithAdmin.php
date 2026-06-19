@@ -8,11 +8,12 @@ use App\Enums\SubscriptionStatus;
 use App\Models\SubscriptionPlan;
 use App\Models\Tenant;
 use App\Models\TenantSubscription;
+use App\Models\Role;
 use App\Models\User;
 use App\Services\StripeService;
+use Database\Seeders\TenantDatabaseSeeder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -26,7 +27,7 @@ class CreateTenantWithAdmin
     /** @return array{0: Tenant, 1: User, 2: Domain} */
     public function create(array $input, StripeService $stripe): array
     {
-        $centralDomain = config('tenancy.central_domains')[0];
+        $centralDomain = env('CENTRAL_DOMAIN', config('tenancy.central_domains')[0]);
         $fullDomain = ($input['subdomain'] ?? '') . '.' . $centralDomain;
 
         Validator::make($input, [
@@ -100,47 +101,54 @@ class CreateTenantWithAdmin
         $tenant = $domain = $user = null;
 
         try {
-            DB::transaction(function () use (
-                $input, $plan, $customer, $fullDomain,
-                $stripeSubscriptionId, $periodStart, $periodEnd, $trialEndsAt,
-                &$tenant, &$domain, &$user,
-            ): void {
-                $tenant = Tenant::create([
-                    'company_name'        => $input['company_name'],
-                    'company_email'       => $input['email'],
-                    'company_phone'       => $input['company_phone'] ?? null,
-                    'timezone'            => $input['timezone'],
-                    'currency'            => $input['currency'],
-                    'subscription_status' => 'trial',
-                    'stripe_customer_id'  => $customer->id,
-                ]);
+            // NOTE: DB::transaction cannot wrap Tenant::create() because TenantCreated fires
+            // CreateDatabase (DDL), which causes MySQL to implicitly commit any open transaction.
+            // Steps are executed sequentially; on failure we clean up manually.
 
-                $domain = $tenant->createDomain($fullDomain);
+            $tenant = Tenant::create([
+                'company_name'        => $input['company_name'],
+                'company_email'       => $input['email'],
+                'company_phone'       => $input['company_phone'] ?? null,
+                'timezone'            => $input['timezone'],
+                'currency'            => $input['currency'],
+                'subscription_status' => 'trial',
+                'stripe_customer_id'  => $customer->id,
+            ]);
 
-                TenantSubscription::create([
-                    'tenant_id'                => $tenant->id,
-                    'plan_id'                  => $plan->id,
-                    'status'                   => SubscriptionStatus::Trial,
-                    'stripe_subscription_id'   => $stripeSubscriptionId,
-                    'stripe_payment_method_id' => $input['payment_method_id'],
-                    'trial_ends_at'            => $trialEndsAt ?? now()->addDays(28),
-                    'current_period_start'     => $periodStart,
-                    'current_period_end'       => $periodEnd,
-                ]);
+            $domain = $tenant->createDomain($fullDomain);
 
-                tenancy()->initialize($tenant);
+            TenantSubscription::create([
+                'tenant_id'                => $tenant->id,
+                'plan_id'                  => $plan->id,
+                'status'                   => SubscriptionStatus::Trial,
+                'stripe_subscription_id'   => $stripeSubscriptionId,
+                'stripe_payment_method_id' => $input['payment_method_id'],
+                'trial_ends_at'            => $trialEndsAt ?? now()->addDays(28),
+                'current_period_start'     => $periodStart,
+                'current_period_end'       => $periodEnd,
+            ]);
 
-                $user = User::create([
-                    'name'      => $input['name'],
-                    'email'     => $input['email'],
-                    'password'  => $input['password'],
-                    'is_active' => true,
-                ]);
+            tenancy()->initialize($tenant);
 
-                Auth::login($user);
-                tenancy()->end();
-            });
+            app(TenantDatabaseSeeder::class)->run();
+
+            $ownerRole = Role::where('name', 'owner')->first();
+
+            $user = User::create([
+                'name'      => $input['name'],
+                'email'     => $input['email'],
+                'password'  => $input['password'],
+                'role_id'   => $ownerRole?->id,
+                'is_active' => true,
+            ]);
+
+            Auth::login($user);
+            tenancy()->end();
         } catch (\Throwable $e) {
+            \Log::error('Tenant creation failed: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            if ($tenant) {
+                try { $tenant->delete(); } catch (\Throwable) {}
+            }
             $this->tryDeleteCustomer($stripe, $customer->id);
             throw ValidationException::withMessages([
                 'payment_method_id' => ['Account creation failed. Please try again.'],

@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Role;
 use Illuminate\Database\Seeder;
+use Database\Seeders\PropertyDataSeeder;
 
 class TenantDatabaseSeeder extends Seeder
 {
@@ -110,5 +111,7 @@ class TenantDatabaseSeeder extends Seeder
                 ]
             );
         }
+
+        app(PropertyDataSeeder::class)->run();
     }
 }

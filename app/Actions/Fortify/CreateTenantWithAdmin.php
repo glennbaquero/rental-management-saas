@@ -101,10 +101,6 @@ class CreateTenantWithAdmin
         $tenant = $domain = $user = null;
 
         try {
-            // NOTE: DB::transaction cannot wrap Tenant::create() because TenantCreated fires
-            // CreateDatabase (DDL), which causes MySQL to implicitly commit any open transaction.
-            // Steps are executed sequentially; on failure we clean up manually.
-
             $tenant = Tenant::create([
                 'company_name'        => $input['company_name'],
                 'company_email'       => $input['email'],

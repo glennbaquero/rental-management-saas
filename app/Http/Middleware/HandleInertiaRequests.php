@@ -38,9 +38,22 @@ class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'name' => config('app.name'),
-            'auth' => [
-                'user' => $request->user(),
+            // Lazy closure: evaluated after tenancy initializes so $request->user()
+            // resolves against the tenant DB, not the central DB.
+            'auth' => fn () => [
+                'user' => $request->user() ? array_merge(
+                    $request->user()->toArray(),
+                    [
+                        'role' => $request->user()->role ? [
+                            'id'           => $request->user()->role->id,
+                            'name'         => $request->user()->role->name,
+                            'display_name' => $request->user()->role->display_name,
+                            'permissions'  => $request->user()->role->permissions ?? [],
+                        ] : null,
+                    ]
+                ) : null,
             ],
+            'toast' => $request->session()->get('toast'),
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
     }

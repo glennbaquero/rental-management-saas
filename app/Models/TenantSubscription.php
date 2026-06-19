@@ -24,6 +24,8 @@ class TenantSubscription extends Model
 {
     use HasUuids;
 
+    protected $connection = 'mysql';
+
     protected function casts(): array
     {
         return [

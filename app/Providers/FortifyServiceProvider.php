@@ -3,8 +3,10 @@
 namespace App\Providers;
 
 use App\Actions\Fortify\ResetUserPassword;
+use Illuminate\Auth\Events\Login;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
@@ -31,6 +33,7 @@ class FortifyServiceProvider extends ServiceProvider
         $this->configureActions();
         $this->configureViews();
         $this->configureRateLimiting();
+        $this->configureLoginEvents();
     }
 
     /**
@@ -68,6 +71,17 @@ class FortifyServiceProvider extends ServiceProvider
         Fortify::twoFactorChallengeView(fn () => Inertia::render('auth/TwoFactorChallenge'));
 
         Fortify::confirmPasswordView(fn () => Inertia::render('auth/ConfirmPassword'));
+    }
+
+    /**
+     * Track last login timestamp on successful authentication.
+     */
+    private function configureLoginEvents(): void
+    {
+        Event::listen(Login::class, function (Login $event) {
+            $event->user->last_login_at = now();
+            $event->user->saveQuietly();
+        });
     }
 
     /**

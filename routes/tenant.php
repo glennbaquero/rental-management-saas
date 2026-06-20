@@ -11,6 +11,10 @@ use App\Http\Controllers\Property\BuildingController;
 use App\Http\Controllers\Property\PropertyController;
 use App\Http\Controllers\Property\PropertyImageController;
 use App\Http\Controllers\Property\UnitController;
+use App\Http\Controllers\Tenant\EmergencyContactController;
+use App\Http\Controllers\Tenant\RentalTenantController;
+use App\Http\Controllers\Tenant\TenantFileController;
+use App\Http\Controllers\Tenant\TenantIdDocumentController;
 use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
@@ -162,6 +166,69 @@ Route::middleware([
         Route::prefix('amenities')->name('amenities.')->middleware('permission:properties.edit')->group(function () {
             Route::post('/', [AmenityController::class, 'store'])->name('store');
             Route::delete('/{amenity}', [AmenityController::class, 'destroy'])->name('destroy');
+        });
+
+        // Rental Tenants
+        Route::prefix('tenants')->name('tenants.')->middleware('permission:tenants.view')->group(function () {
+
+            Route::get('/', [RentalTenantController::class, 'index'])->name('index');
+
+            Route::get('/create', [RentalTenantController::class, 'create'])
+                ->name('create')
+                ->middleware('permission:tenants.create');
+
+            Route::post('/', [RentalTenantController::class, 'store'])
+                ->name('store')
+                ->middleware('permission:tenants.create');
+
+            Route::get('/{tenant}', [RentalTenantController::class, 'show'])->name('show');
+
+            Route::get('/{tenant}/edit', [RentalTenantController::class, 'edit'])
+                ->name('edit')
+                ->middleware('permission:tenants.edit');
+
+            Route::patch('/{tenant}', [RentalTenantController::class, 'update'])
+                ->name('update')
+                ->middleware('permission:tenants.edit');
+
+            Route::delete('/{tenant}', [RentalTenantController::class, 'destroy'])
+                ->name('destroy')
+                ->middleware('permission:tenants.delete');
+
+            // ID Documents
+            Route::post('/{tenant}/documents', [TenantIdDocumentController::class, 'store'])
+                ->name('documents.store')
+                ->middleware('permission:tenants.edit');
+
+            Route::patch('/{tenant}/documents/{document}', [TenantIdDocumentController::class, 'update'])
+                ->name('documents.update')
+                ->middleware('permission:tenants.edit');
+
+            Route::delete('/{tenant}/documents/{document}', [TenantIdDocumentController::class, 'destroy'])
+                ->name('documents.destroy')
+                ->middleware('permission:tenants.edit');
+
+            // Emergency Contacts
+            Route::post('/{tenant}/emergency-contacts', [EmergencyContactController::class, 'store'])
+                ->name('emergency-contacts.store')
+                ->middleware('permission:tenants.edit');
+
+            Route::patch('/{tenant}/emergency-contacts/{contact}', [EmergencyContactController::class, 'update'])
+                ->name('emergency-contacts.update')
+                ->middleware('permission:tenants.edit');
+
+            Route::delete('/{tenant}/emergency-contacts/{contact}', [EmergencyContactController::class, 'destroy'])
+                ->name('emergency-contacts.destroy')
+                ->middleware('permission:tenants.edit');
+
+            // Tenant Files
+            Route::post('/{tenant}/files', [TenantFileController::class, 'store'])
+                ->name('files.store')
+                ->middleware('permission:tenants.edit');
+
+            Route::delete('/{tenant}/files/{file}', [TenantFileController::class, 'destroy'])
+                ->name('files.destroy')
+                ->middleware('permission:tenants.edit');
         });
     });
 

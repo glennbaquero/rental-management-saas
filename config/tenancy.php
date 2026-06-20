@@ -103,7 +103,7 @@ return [
         'suffix_base' => 'tenant',
         'disks' => [
             'local',
-            'public',
+            // 'public' intentionally excluded — public disk stays global so Storage::disk('public')->url() resolves via the shared storage:link symlink
             // 's3',
         ],
 
@@ -115,7 +115,6 @@ return [
         'root_override' => [
             // Disks whose roots should be overridden after storage_path() is suffixed.
             'local' => '%storage_path%/app/',
-            'public' => '%storage_path%/app/public/',
         ],
 
         /**

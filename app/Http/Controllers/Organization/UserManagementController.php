@@ -21,14 +21,14 @@ class UserManagementController extends Controller
     public function index(Request $request): Response
     {
         $query = User::with('role')
-            ->when($request->search, fn ($q, $s) =>
-                $q->where(fn ($inner) =>
-                    $inner->where('name', 'like', "%{$s}%")
-                          ->orWhere('email', 'like', "%{$s}%")
+            ->when($request->search, fn ($query, $search) =>
+                $query->where(fn ($inner) =>
+                    $inner->where('name', 'like', "%{$search}%")
+                          ->orWhere('email', 'like', "%{$search}%")
                 )
             )
-            ->when($request->role, fn ($q, $r) =>
-                $q->whereHas('role', fn ($rq) => $rq->where('name', $r))
+            ->when($request->role, fn ($query, $role) =>
+                $query->whereHas('role', fn ($roleQuery) => $roleQuery->where('name', $role))
             )
             ->orderBy('name');
 
@@ -121,7 +121,7 @@ class UserManagementController extends Controller
         }
 
         if ($user->isOwner()) {
-            $ownerCount = User::whereHas('role', fn ($q) => $q->where('name', 'owner'))->count();
+            $ownerCount = User::whereHas('role', fn ($query) => $query->where('name', 'owner'))->count();
             if ($ownerCount <= 1) {
                 abort(403, 'Cannot delete the only owner account.');
             }

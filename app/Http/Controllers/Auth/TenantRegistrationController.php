@@ -29,18 +29,18 @@ class TenantRegistrationController extends Controller
             'subscriptionPlans'  => SubscriptionPlan::where('is_active', true)
                 ->orderBy('price')
                 ->get()
-                ->map(fn (SubscriptionPlan $p) => [
-                    'id'             => $p->id,
-                    'name'           => $p->name,
-                    'slug'           => $p->slug,
-                    'description'    => $p->description,
-                    'price'          => (float) $p->price,
-                    'billing_cycle'  => $p->billing_cycle->value,
-                    'max_properties' => $p->max_properties,
-                    'max_units'      => $p->max_units,
-                    'max_users'      => $p->max_users,
-                    'features'       => $p->features,
-                    'stripe_price_id' => $p->stripe_price_id,
+                ->map(fn (SubscriptionPlan $plan) => [
+                    'id'              => $plan->id,
+                    'name'            => $plan->name,
+                    'slug'            => $plan->slug,
+                    'description'     => $plan->description,
+                    'price'           => (float) $plan->price,
+                    'billing_cycle'   => $plan->billing_cycle->value,
+                    'max_properties'  => $plan->max_properties,
+                    'max_units'       => $plan->max_units,
+                    'max_users'       => $plan->max_users,
+                    'features'        => $plan->features,
+                    'stripe_price_id' => $plan->stripe_price_id,
                 ]),
         ]);
     }

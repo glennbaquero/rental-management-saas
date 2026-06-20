@@ -27,23 +27,23 @@ class PropertyController extends Controller
             ->withCount([
                 'buildings',
                 'units',
-                'units as available_units_count' => fn ($q) => $q->where('status', 'available'),
-                'units as occupied_units_count'  => fn ($q) => $q->where('status', 'occupied'),
+                'units as available_units_count' => fn ($query) => $query->where('status', 'available'),
+                'units as occupied_units_count'  => fn ($query) => $query->where('status', 'occupied'),
             ])
-            ->when($request->search, fn ($q, $v) =>
-                $q->where(fn ($inner) =>
-                    $inner->where('name', 'like', "%{$v}%")
-                          ->orWhere('code', 'like', "%{$v}%")
-                          ->orWhere('address', 'like', "%{$v}%")
+            ->when($request->search, fn ($query, $value) =>
+                $query->where(fn ($inner) =>
+                    $inner->where('name', 'like', "%{$value}%")
+                          ->orWhere('code', 'like', "%{$value}%")
+                          ->orWhere('address', 'like', "%{$value}%")
                 )
             )
-            ->when($request->type,   fn ($q, $v) => $q->ofType($v))
-            ->when($request->status, fn ($q, $v) => $q->ofStatus($v))
-            ->when($request->city,   fn ($q, $v) => $q->inCity($v))
+            ->when($request->type,   fn ($query, $value) => $query->ofType($value))
+            ->when($request->status, fn ($query, $value) => $query->ofStatus($value))
+            ->when($request->city,   fn ($query, $value) => $query->inCity($value))
             ->latest()
             ->paginate(12)
             ->withQueryString()
-            ->through(fn (Property $p) => $this->transformProperty($p));
+            ->through(fn (Property $property) => $this->transformProperty($property));
 
         $cities = Property::select('city')->distinct()->orderBy('city')->pluck('city');
 
@@ -51,16 +51,16 @@ class PropertyController extends Controller
             'properties' => $properties,
             'filters'    => $request->only(['search', 'type', 'status', 'city']),
             'cities'     => $cities,
-            'types'      => collect(PropertyType::cases())->map(fn ($c) => ['value' => $c->value, 'label' => $c->label()]),
-            'statuses'   => collect(PropertyStatus::cases())->map(fn ($c) => ['value' => $c->value, 'label' => $c->label()]),
+            'types'      => collect(PropertyType::cases())->map(fn ($case) => ['value' => $case->value, 'label' => $case->label()]),
+            'statuses'   => collect(PropertyStatus::cases())->map(fn ($case) => ['value' => $case->value, 'label' => $case->label()]),
         ]);
     }
 
     public function create(): Response
     {
         return Inertia::render('properties/Create', [
-            'types'    => collect(PropertyType::cases())->map(fn ($c) => ['value' => $c->value, 'label' => $c->label()]),
-            'statuses' => collect(PropertyStatus::cases())->map(fn ($c) => ['value' => $c->value, 'label' => $c->label()]),
+            'types'    => collect(PropertyType::cases())->map(fn ($case) => ['value' => $case->value, 'label' => $case->label()]),
+            'statuses' => collect(PropertyStatus::cases())->map(fn ($case) => ['value' => $case->value, 'label' => $case->label()]),
         ]);
     }
 
@@ -84,10 +84,10 @@ class PropertyController extends Controller
         $property->loadCount([
             'buildings',
             'units',
-            'units as available_units_count' => fn ($q) => $q->where('status', 'available'),
-            'units as occupied_units_count'  => fn ($q) => $q->where('status', 'occupied'),
-            'units as reserved_units_count'  => fn ($q) => $q->where('status', 'reserved'),
-            'units as maintenance_units_count' => fn ($q) => $q->where('status', 'maintenance'),
+            'units as available_units_count'   => fn ($query) => $query->where('status', 'available'),
+            'units as occupied_units_count'    => fn ($query) => $query->where('status', 'occupied'),
+            'units as reserved_units_count'    => fn ($query) => $query->where('status', 'reserved'),
+            'units as maintenance_units_count' => fn ($query) => $query->where('status', 'maintenance'),
         ])->load(['amenities', 'images']);
 
         $monthlyRevenue = $property->units()->where('status', 'occupied')->sum('rent_amount');
@@ -95,19 +95,19 @@ class PropertyController extends Controller
         $buildings = $property->buildings()
             ->withCount([
                 'units',
-                'units as occupied_units_count'  => fn ($q) => $q->where('status', 'occupied'),
-                'units as available_units_count' => fn ($q) => $q->where('status', 'available'),
+                'units as occupied_units_count'  => fn ($query) => $query->where('status', 'occupied'),
+                'units as available_units_count' => fn ($query) => $query->where('status', 'available'),
             ])
             ->orderBy('name')
             ->get()
-            ->map(fn ($b) => $this->transformBuilding($b));
+            ->map(fn ($building) => $this->transformBuilding($building));
 
         $units = $property->units()
             ->with(['building:id,name', 'unitType:id,name'])
             ->orderByRaw('ISNULL(building_id), building_id')
             ->orderBy('unit_number')
             ->get()
-            ->map(fn ($u) => $this->transformUnit($u));
+            ->map(fn ($unit) => $this->transformUnit($unit));
 
         $unitTypes    = UnitType::orderBy('name')->get(['id', 'name']);
         $allAmenities = Amenity::orderBy('name')->get(['id', 'name', 'icon', 'category']);
@@ -127,8 +127,8 @@ class PropertyController extends Controller
 
         return Inertia::render('properties/Edit', [
             'property' => $this->transformProperty($property),
-            'types'    => collect(PropertyType::cases())->map(fn ($c) => ['value' => $c->value, 'label' => $c->label()]),
-            'statuses' => collect(PropertyStatus::cases())->map(fn ($c) => ['value' => $c->value, 'label' => $c->label()]),
+            'types'    => collect(PropertyType::cases())->map(fn ($case) => ['value' => $case->value, 'label' => $case->label()]),
+            'statuses' => collect(PropertyStatus::cases())->map(fn ($case) => ['value' => $case->value, 'label' => $case->label()]),
         ]);
     }
 
@@ -158,77 +158,77 @@ class PropertyController extends Controller
             ->with('toast', ['type' => 'success', 'message' => 'Property deleted.']);
     }
 
-    private function transformProperty(Property $p, float $monthlyRevenue = 0): array
+    private function transformProperty(Property $property, float $monthlyRevenue = 0): array
     {
         return [
-            'id'                     => $p->id,
-            'name'                   => $p->name,
-            'code'                   => $p->code,
-            'type'                   => $p->type?->value,
-            'type_label'             => $p->type?->label(),
-            'description'            => $p->description,
-            'address'                => $p->address,
-            'city'                   => $p->city,
-            'province'               => $p->province,
-            'state'                  => $p->state,
-            'zip'                    => $p->zip,
-            'postal_code'            => $p->postal_code,
-            'country'                => $p->country,
-            'latitude'               => $p->latitude,
-            'longitude'              => $p->longitude,
-            'status'                 => $p->status?->value,
-            'status_label'           => $p->status?->label(),
-            'featured_image_url'     => $p->featured_image_url,
-            'total_buildings'        => $p->buildings_count ?? 0,
-            'total_units'            => $p->units_count ?? 0,
-            'available_units'        => $p->available_units_count ?? 0,
-            'occupied_units'         => $p->occupied_units_count ?? 0,
-            'reserved_units'         => $p->reserved_units_count ?? 0,
-            'maintenance_units'      => $p->maintenance_units_count ?? 0,
+            'id'                     => $property->id,
+            'name'                   => $property->name,
+            'code'                   => $property->code,
+            'type'                   => $property->type?->value,
+            'type_label'             => $property->type?->label(),
+            'description'            => $property->description,
+            'address'                => $property->address,
+            'city'                   => $property->city,
+            'province'               => $property->province,
+            'state'                  => $property->state,
+            'zip'                    => $property->zip,
+            'postal_code'            => $property->postal_code,
+            'country'                => $property->country,
+            'latitude'               => $property->latitude,
+            'longitude'              => $property->longitude,
+            'status'                 => $property->status?->value,
+            'status_label'           => $property->status?->label(),
+            'featured_image_url'     => $property->featured_image_url,
+            'total_buildings'        => $property->buildings_count ?? 0,
+            'total_units'            => $property->units_count ?? 0,
+            'available_units'        => $property->available_units_count ?? 0,
+            'occupied_units'         => $property->occupied_units_count ?? 0,
+            'reserved_units'         => $property->reserved_units_count ?? 0,
+            'maintenance_units'      => $property->maintenance_units_count ?? 0,
             'monthly_revenue'        => (float) $monthlyRevenue,
-            'amenities'              => $p->relationLoaded('amenities')
-                ? $p->amenities->map(fn ($a) => ['id' => $a->id, 'name' => $a->name, 'icon' => $a->icon, 'category' => $a->category])->values()
+            'amenities'              => $property->relationLoaded('amenities')
+                ? $property->amenities->map(fn ($amenity) => ['id' => $amenity->id, 'name' => $amenity->name, 'icon' => $amenity->icon, 'category' => $amenity->category])->values()
                 : [],
-            'images'                 => $p->relationLoaded('images')
-                ? $p->images->map(fn ($img) => ['id' => $img->id, 'url' => $img->url, 'caption' => $img->caption, 'sort_order' => $img->sort_order])->values()
+            'images'                 => $property->relationLoaded('images')
+                ? $property->images->map(fn ($image) => ['id' => $image->id, 'url' => $image->url, 'caption' => $image->caption, 'sort_order' => $image->sort_order])->values()
                 : [],
-            'created_at'             => $p->created_at?->toISOString(),
+            'created_at'             => $property->created_at?->toISOString(),
         ];
     }
 
-    private function transformUnit(\App\Models\Unit $u): array
+    private function transformUnit(\App\Models\Unit $unit): array
     {
         return [
-            'id'             => $u->id,
-            'unit_number'    => $u->unit_number,
-            'floor'          => $u->floor,
-            'area_sqm'       => $u->area_sqm,
-            'bedrooms'       => $u->bedrooms,
-            'bathrooms'      => $u->bathrooms,
-            'max_occupants'  => $u->max_occupants,
-            'rent_amount'    => (float) $u->rent_amount,
-            'deposit_amount' => (float) $u->deposit_amount,
-            'status'         => $u->status?->value,
-            'status_label'   => $u->status?->label(),
-            'notes'          => $u->notes,
-            'building'       => $u->building ? ['id' => $u->building->id, 'name' => $u->building->name] : null,
-            'unit_type'      => $u->unitType ? ['id' => $u->unitType->id, 'name' => $u->unitType->name] : null,
+            'id'             => $unit->id,
+            'unit_number'    => $unit->unit_number,
+            'floor'          => $unit->floor,
+            'area_sqm'       => $unit->area_sqm,
+            'bedrooms'       => $unit->bedrooms,
+            'bathrooms'      => $unit->bathrooms,
+            'max_occupants'  => $unit->max_occupants,
+            'rent_amount'    => (float) $unit->rent_amount,
+            'deposit_amount' => (float) $unit->deposit_amount,
+            'status'         => $unit->status?->value,
+            'status_label'   => $unit->status?->label(),
+            'notes'          => $unit->notes,
+            'building'       => $unit->building ? ['id' => $unit->building->id, 'name' => $unit->building->name] : null,
+            'unit_type'      => $unit->unitType ? ['id' => $unit->unitType->id, 'name' => $unit->unitType->name] : null,
         ];
     }
 
-    private function transformBuilding(\App\Models\Building $b): array
+    private function transformBuilding(\App\Models\Building $building): array
     {
         return [
-            'id'             => $b->id,
-            'name'           => $b->name,
-            'code'           => $b->code,
-            'floors'         => $b->floors,
-            'description'    => $b->description,
-            'status'         => $b->status?->value,
-            'status_label'   => $b->status?->label(),
-            'total_units'    => $b->units_count ?? 0,
-            'occupied_units' => $b->occupied_units_count ?? 0,
-            'available_units' => $b->available_units_count ?? 0,
+            'id'              => $building->id,
+            'name'            => $building->name,
+            'code'            => $building->code,
+            'floors'          => $building->floors,
+            'description'     => $building->description,
+            'status'          => $building->status?->value,
+            'status_label'    => $building->status?->label(),
+            'total_units'     => $building->units_count ?? 0,
+            'occupied_units'  => $building->occupied_units_count ?? 0,
+            'available_units' => $building->available_units_count ?? 0,
         ];
     }
 }

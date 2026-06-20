@@ -18,23 +18,23 @@ class UnitController extends Controller
     {
         $units = $property->units()
             ->with(['building:id,name', 'unitType:id,name'])
-            ->when($request->building, fn ($q, $v) => $q->where('building_id', $v))
-            ->when($request->unit_type, fn ($q, $v) => $q->where('unit_type_id', $v))
-            ->when($request->status, fn ($q, $v) => $q->where('status', $v))
-            ->when($request->search, fn ($q, $v) =>
-                $q->where('unit_number', 'like', "%{$v}%")
+            ->when($request->building,   fn ($query, $value) => $query->where('building_id', $value))
+            ->when($request->unit_type,  fn ($query, $value) => $query->where('unit_type_id', $value))
+            ->when($request->status,     fn ($query, $value) => $query->where('status', $value))
+            ->when($request->search,     fn ($query, $value) =>
+                $query->where('unit_number', 'like', "%{$value}%")
             )
             ->orderByRaw("ISNULL(building_id), building_id")
             ->orderBy('unit_number')
             ->paginate(20)
             ->withQueryString()
-            ->through(fn (Unit $u) => $this->transformUnit($u));
+            ->through(fn (Unit $unit) => $this->transformUnit($unit));
 
         return \Inertia::render('properties/units/Index', [
             'property' => ['id' => $property->id, 'name' => $property->name],
             'units'    => $units,
             'filters'  => $request->only(['search', 'building', 'unit_type', 'status']),
-            'statuses' => collect(UnitStatus::cases())->map(fn ($c) => ['value' => $c->value, 'label' => $c->label()]),
+            'statuses' => collect(UnitStatus::cases())->map(fn ($case) => ['value' => $case->value, 'label' => $case->label()]),
         ]);
     }
 
@@ -89,23 +89,23 @@ class UnitController extends Controller
         return back()->with('toast', ['type' => 'success', 'message' => 'Unit deleted.']);
     }
 
-    private function transformUnit(Unit $u): array
+    private function transformUnit(Unit $unit): array
     {
         return [
-            'id'             => $u->id,
-            'unit_number'    => $u->unit_number,
-            'floor'          => $u->floor,
-            'area_sqm'       => $u->area_sqm,
-            'bedrooms'       => $u->bedrooms,
-            'bathrooms'      => $u->bathrooms,
-            'max_occupants'  => $u->max_occupants,
-            'rent_amount'    => (float) $u->rent_amount,
-            'deposit_amount' => (float) $u->deposit_amount,
-            'status'         => $u->status?->value,
-            'status_label'   => $u->status?->label(),
-            'notes'          => $u->notes,
-            'building'       => $u->building ? ['id' => $u->building->id, 'name' => $u->building->name] : null,
-            'unit_type'      => $u->unitType ? ['id' => $u->unitType->id, 'name' => $u->unitType->name] : null,
+            'id'             => $unit->id,
+            'unit_number'    => $unit->unit_number,
+            'floor'          => $unit->floor,
+            'area_sqm'       => $unit->area_sqm,
+            'bedrooms'       => $unit->bedrooms,
+            'bathrooms'      => $unit->bathrooms,
+            'max_occupants'  => $unit->max_occupants,
+            'rent_amount'    => (float) $unit->rent_amount,
+            'deposit_amount' => (float) $unit->deposit_amount,
+            'status'         => $unit->status?->value,
+            'status_label'   => $unit->status?->label(),
+            'notes'          => $unit->notes,
+            'building'       => $unit->building ? ['id' => $unit->building->id, 'name' => $unit->building->name] : null,
+            'unit_type'      => $unit->unitType ? ['id' => $unit->unitType->id, 'name' => $unit->unitType->name] : null,
         ];
     }
 }

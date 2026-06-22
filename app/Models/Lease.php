@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\BillingCycle;
 use App\Enums\LeaseStatus;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -25,13 +26,16 @@ use Illuminate\Support\Carbon;
  * @property bool $deposit_paid
  * @property Carbon|null $deposit_paid_date
  * @property int $billing_day
+ * @property BillingCycle $billing_cycle
+ * @property int|null $generate_days_before
+ * @property int $issue_date_offset
  * @property LeaseStatus $status
  * @property Carbon|null $termination_date
  * @property string|null $termination_reason
  * @property string|null $notes
  * @property string|null $created_by
  */
-#[Fillable(['unit_id', 'rental_tenant_id', 'lease_number', 'start_date', 'end_date', 'rent_amount', 'deposit_amount', 'deposit_paid', 'deposit_paid_date', 'billing_day', 'status', 'termination_date', 'termination_reason', 'notes', 'created_by'])]
+#[Fillable(['unit_id', 'rental_tenant_id', 'lease_number', 'start_date', 'end_date', 'rent_amount', 'deposit_amount', 'deposit_paid', 'deposit_paid_date', 'billing_day', 'billing_cycle', 'generate_days_before', 'issue_date_offset', 'status', 'termination_date', 'termination_reason', 'notes', 'created_by'])]
 class Lease extends Model
 {
     use HasUuids, SoftDeletes;
@@ -39,14 +43,17 @@ class Lease extends Model
     protected function casts(): array
     {
         return [
-            'status' => LeaseStatus::class,
-            'start_date' => 'date',
-            'end_date' => 'date',
-            'deposit_paid_date' => 'date',
-            'termination_date' => 'date',
-            'deposit_paid' => 'boolean',
-            'rent_amount' => 'decimal:2',
-            'deposit_amount' => 'decimal:2',
+            'status'               => LeaseStatus::class,
+            'billing_cycle'        => BillingCycle::class,
+            'start_date'           => 'date',
+            'end_date'             => 'date',
+            'deposit_paid_date'    => 'date',
+            'termination_date'     => 'date',
+            'deposit_paid'         => 'boolean',
+            'rent_amount'          => 'decimal:2',
+            'deposit_amount'       => 'decimal:2',
+            'generate_days_before' => 'integer',
+            'issue_date_offset'    => 'integer',
         ];
     }
 
@@ -83,6 +90,11 @@ class Lease extends Model
     public function ledgerEntries(): HasMany
     {
         return $this->hasMany(LedgerEntry::class);
+    }
+
+    public function lateFees(): HasMany
+    {
+        return $this->hasMany(LateFee::class);
     }
 
     public function documents(): MorphMany

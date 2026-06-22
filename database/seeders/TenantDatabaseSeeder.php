@@ -4,7 +4,6 @@ namespace Database\Seeders;
 
 use App\Models\Role;
 use Illuminate\Database\Seeder;
-use Database\Seeders\PropertyDataSeeder;
 
 class TenantDatabaseSeeder extends Seeder
 {
@@ -45,6 +44,12 @@ class TenantDatabaseSeeder extends Seeder
                     'maintenance.manage',
                     'reports.view',
                     'reports.view_financial',
+                    'billing.view',
+                    'billing.create_invoice',
+                    'billing.manage_invoice',
+                    'billing.record_payment',
+                    'billing.verify_payment',
+                    'billing.manage_settings',
                 ],
             ],
             [
@@ -69,6 +74,10 @@ class TenantDatabaseSeeder extends Seeder
                     'maintenance.edit',
                     'maintenance.manage',
                     'reports.view',
+                    'billing.view',
+                    'billing.create_invoice',
+                    'billing.manage_invoice',
+                    'billing.record_payment',
                 ],
             ],
             [
@@ -98,6 +107,12 @@ class TenantDatabaseSeeder extends Seeder
                     'reports.view_financial',
                     'leases.view',
                     'tenants.view',
+                    'billing.view',
+                    'billing.create_invoice',
+                    'billing.manage_invoice',
+                    'billing.record_payment',
+                    'billing.verify_payment',
+                    'billing.manage_settings',
                 ],
             ],
         ];
@@ -113,5 +128,7 @@ class TenantDatabaseSeeder extends Seeder
         }
 
         app(PropertyDataSeeder::class)->run();
+        app(RentalTenantSeeder::class)->run();
+        app(BillingSeeder::class)->run();
     }
 }

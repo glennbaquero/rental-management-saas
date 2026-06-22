@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Support\Carbon;
 
 /**
@@ -20,6 +21,7 @@ use Illuminate\Support\Carbon;
  * @property InvoiceStatus $status
  * @property Carbon|null $billing_period_start
  * @property Carbon|null $billing_period_end
+ * @property Carbon|null $issue_date
  * @property Carbon $due_date
  * @property float $subtotal
  * @property float $tax_amount
@@ -34,7 +36,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $voided_at
  * @property string|null $created_by
  */
-#[Fillable(['lease_id', 'invoice_number', 'type', 'status', 'billing_period_start', 'billing_period_end', 'due_date', 'subtotal', 'tax_amount', 'late_fee_amount', 'discount_amount', 'total_amount', 'paid_amount', 'balance_due', 'notes', 'sent_at', 'paid_at', 'voided_at', 'created_by'])]
+#[Fillable(['lease_id', 'invoice_number', 'type', 'status', 'billing_period_start', 'billing_period_end', 'issue_date', 'due_date', 'subtotal', 'tax_amount', 'late_fee_amount', 'discount_amount', 'total_amount', 'paid_amount', 'balance_due', 'notes', 'sent_at', 'paid_at', 'voided_at', 'created_by'])]
 class Invoice extends Model
 {
     use HasUuids;
@@ -46,6 +48,7 @@ class Invoice extends Model
             'status' => InvoiceStatus::class,
             'billing_period_start' => 'date',
             'billing_period_end' => 'date',
+            'issue_date' => 'date',
             'due_date' => 'date',
             'subtotal' => 'decimal:2',
             'tax_amount' => 'decimal:2',
@@ -75,6 +78,11 @@ class Invoice extends Model
         return $this->hasMany(Payment::class);
     }
 
+    public function lateFees(): HasMany
+    {
+        return $this->hasMany(LateFee::class);
+    }
+
     public function documents(): MorphMany
     {
         return $this->morphMany(Document::class, 'documentable');
@@ -88,6 +96,11 @@ class Invoice extends Model
     public function isOverdue(): bool
     {
         return $this->due_date->isPast()
-            && in_array($this->status, [InvoiceStatus::Sent, InvoiceStatus::Partial]);
+            && in_array($this->status, [InvoiceStatus::Sent, InvoiceStatus::Partial, InvoiceStatus::Overdue]);
+    }
+
+    public function getRentalTenantAttribute(): ?RentalTenant
+    {
+        return $this->lease?->rentalTenant;
     }
 }

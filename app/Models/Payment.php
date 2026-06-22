@@ -23,9 +23,14 @@ use Illuminate\Support\Carbon;
  * @property string|null $notes
  * @property string|null $received_by
  * @property PaymentStatus $status
+ * @property string|null $transaction_id
+ * @property string|null $proof_of_payment
+ * @property Carbon|null $verified_at
+ * @property string|null $verified_by
+ * @property string|null $rejection_reason
  * @property string|null $created_by
  */
-#[Fillable(['invoice_id', 'lease_id', 'rental_tenant_id', 'payment_number', 'amount', 'payment_method', 'reference_number', 'payment_date', 'notes', 'received_by', 'status', 'created_by'])]
+#[Fillable(['invoice_id', 'lease_id', 'rental_tenant_id', 'payment_number', 'amount', 'payment_method', 'reference_number', 'transaction_id', 'payment_date', 'notes', 'received_by', 'status', 'proof_of_payment', 'verified_at', 'verified_by', 'rejection_reason', 'created_by'])]
 class Payment extends Model
 {
     use HasUuids;
@@ -34,9 +39,10 @@ class Payment extends Model
     {
         return [
             'payment_method' => PaymentMethod::class,
-            'status' => PaymentStatus::class,
-            'payment_date' => 'date',
-            'amount' => 'decimal:2',
+            'status'         => PaymentStatus::class,
+            'payment_date'   => 'date',
+            'amount'         => 'decimal:2',
+            'verified_at'    => 'datetime',
         ];
     }
 
@@ -60,8 +66,20 @@ class Payment extends Model
         return $this->belongsTo(User::class, 'received_by');
     }
 
+    public function verifiedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'verified_by');
+    }
+
     public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function getProofOfPaymentUrlAttribute(): ?string
+    {
+        return $this->proof_of_payment
+            ? \Illuminate\Support\Facades\Storage::disk('public')->url($this->proof_of_payment)
+            : null;
     }
 }

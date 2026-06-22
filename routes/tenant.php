@@ -2,6 +2,11 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Billing\BillingDashboardController;
+use App\Http\Controllers\Billing\BillingSettingsController;
+use App\Http\Controllers\Billing\InvoiceController;
+use App\Http\Controllers\Billing\LateFeeController;
+use App\Http\Controllers\Billing\PaymentController;
 use App\Http\Controllers\Organization\InvitationController;
 use App\Http\Controllers\Organization\OrganizationSettingsController;
 use App\Http\Controllers\Organization\RoleController;
@@ -166,6 +171,64 @@ Route::middleware([
         Route::prefix('amenities')->name('amenities.')->middleware('permission:properties.edit')->group(function () {
             Route::post('/', [AmenityController::class, 'store'])->name('store');
             Route::delete('/{amenity}', [AmenityController::class, 'destroy'])->name('destroy');
+        });
+
+        // Billing
+        Route::prefix('billing')->name('billing.')->middleware('permission:billing.view')->group(function () {
+
+            Route::get('/dashboard', [BillingDashboardController::class, 'index'])->name('dashboard');
+
+            Route::get('/settings', [BillingSettingsController::class, 'edit'])
+                ->name('settings')
+                ->middleware('permission:billing.manage_settings');
+
+            Route::patch('/settings', [BillingSettingsController::class, 'update'])
+                ->name('settings.update')
+                ->middleware('permission:billing.manage_settings');
+
+            Route::prefix('invoices')->name('invoices.')->group(function () {
+                Route::get('/', [InvoiceController::class, 'index'])->name('index');
+
+                Route::get('/create', [InvoiceController::class, 'create'])
+                    ->name('create')
+                    ->middleware('permission:billing.create_invoice');
+
+                Route::post('/', [InvoiceController::class, 'store'])
+                    ->name('store')
+                    ->middleware('permission:billing.create_invoice');
+
+                Route::get('/{invoice}', [InvoiceController::class, 'show'])->name('show');
+
+                Route::delete('/{invoice}', [InvoiceController::class, 'destroy'])
+                    ->name('destroy')
+                    ->middleware('permission:billing.manage_invoice');
+
+                Route::post('/{invoice}/send', [InvoiceController::class, 'send'])
+                    ->name('send')
+                    ->middleware('permission:billing.manage_invoice');
+
+                Route::post('/{invoice}/record-payment', [PaymentController::class, 'store'])
+                    ->name('record-payment')
+                    ->middleware('permission:billing.record_payment');
+            });
+
+            Route::prefix('payments')->name('payments.')->group(function () {
+                Route::get('/', [PaymentController::class, 'index'])->name('index');
+
+                Route::patch('/{payment}/verify', [PaymentController::class, 'verify'])
+                    ->name('verify')
+                    ->middleware('permission:billing.verify_payment');
+
+                Route::patch('/{payment}/reject', [PaymentController::class, 'reject'])
+                    ->name('reject')
+                    ->middleware('permission:billing.verify_payment');
+
+                Route::post('/{payment}/proof', [PaymentController::class, 'uploadProof'])
+                    ->name('proof')
+                    ->middleware('permission:billing.record_payment');
+            });
+
+            Route::get('/late-fees', [LateFeeController::class, 'index'])->name('late-fees.index');
         });
 
         // Rental Tenants

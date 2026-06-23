@@ -16,6 +16,11 @@ use App\Http\Controllers\Property\BuildingController;
 use App\Http\Controllers\Property\PropertyController;
 use App\Http\Controllers\Property\PropertyImageController;
 use App\Http\Controllers\Property\UnitController;
+use App\Http\Controllers\Lease\LeaseController;
+use App\Http\Controllers\Lease\LeaseDepositController;
+use App\Http\Controllers\Lease\LeaseDocumentController;
+use App\Http\Controllers\Lease\LeaseRenewalController;
+use App\Http\Controllers\Lease\LeaseTerminationController;
 use App\Http\Controllers\Tenant\EmergencyContactController;
 use App\Http\Controllers\Tenant\RentalTenantController;
 use App\Http\Controllers\Tenant\TenantFileController;
@@ -229,6 +234,62 @@ Route::middleware([
             });
 
             Route::get('/late-fees', [LateFeeController::class, 'index'])->name('late-fees.index');
+        });
+
+        // Leases
+        Route::prefix('leases')->name('leases.')->middleware('permission:leases.view')->group(function () {
+
+            Route::get('/', [LeaseController::class, 'index'])->name('index');
+
+            Route::get('/create', [LeaseController::class, 'create'])
+                ->name('create')
+                ->middleware('permission:leases.create');
+
+            Route::post('/', [LeaseController::class, 'store'])
+                ->name('store')
+                ->middleware('permission:leases.create');
+
+            Route::get('/{lease}', [LeaseController::class, 'show'])->name('show');
+
+            Route::get('/{lease}/edit', [LeaseController::class, 'edit'])
+                ->name('edit')
+                ->middleware('permission:leases.edit');
+
+            Route::patch('/{lease}', [LeaseController::class, 'update'])
+                ->name('update')
+                ->middleware('permission:leases.edit');
+
+            Route::delete('/{lease}', [LeaseController::class, 'destroy'])
+                ->name('destroy')
+                ->middleware('permission:leases.delete');
+
+            Route::post('/{lease}/renew', [LeaseRenewalController::class, 'store'])
+                ->name('renewals.store')
+                ->middleware('permission:leases.renew');
+
+            Route::patch('/{lease}/renewals/{renewal}', [LeaseRenewalController::class, 'update'])
+                ->name('renewals.update')
+                ->middleware('permission:leases.renew');
+
+            Route::post('/{lease}/terminate', [LeaseTerminationController::class, 'store'])
+                ->name('terminate')
+                ->middleware('permission:leases.terminate');
+
+            Route::post('/{lease}/deposits', [LeaseDepositController::class, 'store'])
+                ->name('deposits.store')
+                ->middleware('permission:leases.edit');
+
+            Route::patch('/{lease}/deposits/{deposit}', [LeaseDepositController::class, 'update'])
+                ->name('deposits.update')
+                ->middleware('permission:leases.edit');
+
+            Route::post('/{lease}/documents', [LeaseDocumentController::class, 'store'])
+                ->name('documents.store')
+                ->middleware('permission:leases.edit');
+
+            Route::delete('/{lease}/documents/{document}', [LeaseDocumentController::class, 'destroy'])
+                ->name('documents.destroy')
+                ->middleware('permission:leases.edit');
         });
 
         // Rental Tenants

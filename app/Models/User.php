@@ -58,9 +58,9 @@ class User extends Authenticatable implements PasskeyUser
         return $this->belongsTo(Role::class);
     }
 
-    public function assignedMaintenanceRequests(): HasMany
+    public function maintenanceAssignments(): HasMany
     {
-        return $this->hasMany(MaintenanceRequest::class, 'assigned_to');
+        return $this->hasMany(MaintenanceAssignment::class, 'user_id');
     }
 
     public function maintenanceComments(): HasMany

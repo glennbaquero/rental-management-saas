@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { BookOpen, Building2, CreditCard, FileText, LayoutGrid, Settings2, Shield, UserRound, Users } from '@lucide/vue';
+import { Building2, CreditCard, FileText, LayoutGrid, Settings2, Shield, UserRound, Users, Wrench } from '@lucide/vue';
 import AppLogo from '@/components/AppLogo.vue';
 import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
@@ -45,6 +45,11 @@ const mainNavItems: NavItem[] = [
         title: 'Billing',
         href: '/billing/dashboard',
         icon: CreditCard,
+    },
+    {
+        title: 'Maintenance',
+        href: '/maintenance',
+        icon: Wrench,
     },
 ];
 

@@ -7,6 +7,13 @@ use App\Http\Controllers\Billing\BillingSettingsController;
 use App\Http\Controllers\Billing\InvoiceController;
 use App\Http\Controllers\Billing\LateFeeController;
 use App\Http\Controllers\Billing\PaymentController;
+use App\Http\Controllers\Maintenance\MaintenanceAssignmentController;
+use App\Http\Controllers\Maintenance\MaintenanceAttachmentController;
+use App\Http\Controllers\Maintenance\MaintenanceCommentController;
+use App\Http\Controllers\Maintenance\MaintenanceCostController;
+use App\Http\Controllers\Maintenance\MaintenanceDashboardController;
+use App\Http\Controllers\Maintenance\MaintenanceRatingController;
+use App\Http\Controllers\Maintenance\MaintenanceTicketController;
 use App\Http\Controllers\Organization\InvitationController;
 use App\Http\Controllers\Organization\OrganizationSettingsController;
 use App\Http\Controllers\Organization\RoleController;
@@ -290,6 +297,71 @@ Route::middleware([
             Route::delete('/{lease}/documents/{document}', [LeaseDocumentController::class, 'destroy'])
                 ->name('documents.destroy')
                 ->middleware('permission:leases.edit');
+        });
+
+        // Maintenance
+        Route::prefix('maintenance')->name('maintenance.')->middleware('permission:maintenance.view')->group(function () {
+
+            Route::get('/dashboard', [MaintenanceDashboardController::class, 'index'])->name('dashboard');
+
+            Route::get('/', [MaintenanceTicketController::class, 'index'])->name('index');
+
+            Route::get('/create', [MaintenanceTicketController::class, 'create'])
+                ->name('create')
+                ->middleware('permission:maintenance.create');
+
+            Route::post('/', [MaintenanceTicketController::class, 'store'])
+                ->name('store')
+                ->middleware('permission:maintenance.create');
+
+            Route::get('/{ticket}', [MaintenanceTicketController::class, 'show'])->name('show');
+
+            Route::get('/{ticket}/edit', [MaintenanceTicketController::class, 'edit'])
+                ->name('edit')
+                ->middleware('permission:maintenance.edit');
+
+            Route::put('/{ticket}', [MaintenanceTicketController::class, 'update'])
+                ->name('update')
+                ->middleware('permission:maintenance.edit');
+
+            Route::delete('/{ticket}', [MaintenanceTicketController::class, 'destroy'])
+                ->name('destroy')
+                ->middleware('permission:maintenance.edit');
+
+            // Assignments
+            Route::post('/{ticket}/assign', [MaintenanceAssignmentController::class, 'store'])
+                ->name('assign')
+                ->middleware('permission:maintenance.manage');
+
+            Route::put('/{ticket}/assignments/{assignment}', [MaintenanceAssignmentController::class, 'update'])
+                ->name('assignments.update')
+                ->middleware('permission:maintenance.manage');
+
+            // Comments
+            Route::post('/{ticket}/comments', [MaintenanceCommentController::class, 'store'])->name('comments.store');
+
+            Route::delete('/{ticket}/comments/{comment}', [MaintenanceCommentController::class, 'destroy'])->name('comments.destroy');
+
+            // Attachments
+            Route::post('/{ticket}/attachments', [MaintenanceAttachmentController::class, 'store'])->name('attachments.store');
+
+            Route::delete('/{ticket}/attachments/{attachment}', [MaintenanceAttachmentController::class, 'destroy'])->name('attachments.destroy');
+
+            // Costs
+            Route::post('/{ticket}/costs', [MaintenanceCostController::class, 'store'])
+                ->name('costs.store')
+                ->middleware('permission:maintenance.manage');
+
+            Route::put('/{ticket}/costs/{cost}', [MaintenanceCostController::class, 'update'])
+                ->name('costs.update')
+                ->middleware('permission:maintenance.manage');
+
+            Route::delete('/{ticket}/costs/{cost}', [MaintenanceCostController::class, 'destroy'])
+                ->name('costs.destroy')
+                ->middleware('permission:maintenance.manage');
+
+            // Rating
+            Route::post('/{ticket}/rate', [MaintenanceRatingController::class, 'store'])->name('rate');
         });
 
         // Rental Tenants

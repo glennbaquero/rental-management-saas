@@ -1,47 +1,56 @@
 <script setup lang="ts">
 import { Head } from '@inertiajs/vue3';
-import PlaceholderPattern from '@/components/PlaceholderPattern.vue';
+import AccountantSection from '@/components/dashboard/AccountantSection.vue';
+import OwnerSection from '@/components/dashboard/OwnerSection.vue';
+import PropertyManagerSection from '@/components/dashboard/PropertyManagerSection.vue';
+import StaffSection from '@/components/dashboard/StaffSection.vue';
 import { dashboard } from '@/routes';
+import type {
+    AccountantDashboardProps,
+    DashboardRole,
+    OwnerDashboardProps,
+    PropertyManagerDashboardProps,
+    StaffDashboardProps,
+} from '@/types/dashboard';
 
 defineOptions({
     layout: {
         breadcrumbs: [
-            {
-                title: 'Dashboard',
-                href: dashboard(),
-            },
+            { title: 'Dashboard', href: dashboard() },
         ],
     },
 });
+
+const props = withDefaults(defineProps<{
+    role?: DashboardRole;
+    [key: string]: unknown;
+}>(), { role: 'staff' });
+
+const titleMap: Record<DashboardRole, string> = {
+    owner:            'Owner Dashboard',
+    property_manager: 'Property Manager Dashboard',
+    accountant:       'Accountant Dashboard',
+    staff:            'Staff Dashboard',
+};
 </script>
 
 <template>
-    <Head title="Dashboard" />
+    <Head :title="titleMap[role ?? 'staff'] ?? 'Dashboard'" />
 
-    <div
-        class="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4"
-    >
-        <div class="grid auto-rows-min gap-4 md:grid-cols-3">
-            <div
-                class="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border"
-            >
-                <PlaceholderPattern />
-            </div>
-            <div
-                class="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border"
-            >
-                <PlaceholderPattern />
-            </div>
-            <div
-                class="relative aspect-video overflow-hidden rounded-xl border border-sidebar-border/70 dark:border-sidebar-border"
-            >
-                <PlaceholderPattern />
-            </div>
-        </div>
-        <div
-            class="relative min-h-[100vh] flex-1 rounded-xl border border-sidebar-border/70 md:min-h-min dark:border-sidebar-border"
-        >
-            <PlaceholderPattern />
-        </div>
-    </div>
+    <OwnerSection
+        v-if="role === 'owner'"
+        v-bind="props as unknown as OwnerDashboardProps"
+    />
+    <PropertyManagerSection
+        v-else-if="role === 'property_manager'"
+        v-bind="props as unknown as PropertyManagerDashboardProps"
+    />
+    <AccountantSection
+        v-else-if="role === 'accountant'"
+        v-bind="props as unknown as AccountantDashboardProps"
+    />
+    <StaffSection
+        v-else
+        v-bind="props as unknown as StaffDashboardProps"
+    />
 </template>

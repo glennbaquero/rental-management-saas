@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\TenantRegistrationController;
+use App\Http\Controllers\Dashboard\DashboardController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(\App\Http\Middleware\InitializeTenancyBySubdomain::class)->group(function () {
@@ -13,7 +14,7 @@ Route::middleware(\App\Http\Middleware\InitializeTenancyBySubdomain::class)->gro
     });
 
     Route::middleware(['auth', 'verified'])->group(function () {
-        Route::inertia('dashboard', 'Dashboard')->name('dashboard');
+        Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
     });
 
 });

@@ -19,7 +19,23 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $current_period_end
  * @property Carbon|null $canceled_at
  */
-#[Fillable(['tenant_id', 'plan_id', 'status', 'trial_ends_at', 'current_period_start', 'current_period_end', 'canceled_at', 'stripe_subscription_id', 'stripe_payment_method_id'])]
+#[Fillable([
+    'tenant_id',
+    'plan_id',
+    'status',
+    'trial_ends_at',
+    'current_period_start',
+    'current_period_end',
+    'canceled_at',
+    'stripe_subscription_id',
+    'stripe_payment_method_id',
+    'stripe_price_id',
+    'stripe_product_id',
+    'quantity',
+    'cancel_at',
+    'paused_at',
+    'metadata',
+])]
 class TenantSubscription extends Model
 {
     use HasUuids;
@@ -29,11 +45,15 @@ class TenantSubscription extends Model
     protected function casts(): array
     {
         return [
-            'status' => SubscriptionStatus::class,
-            'trial_ends_at' => 'datetime',
+            'status'               => SubscriptionStatus::class,
+            'trial_ends_at'        => 'datetime',
             'current_period_start' => 'datetime',
-            'current_period_end' => 'datetime',
-            'canceled_at' => 'datetime',
+            'current_period_end'   => 'datetime',
+            'canceled_at'          => 'datetime',
+            'cancel_at'            => 'datetime',
+            'paused_at'            => 'datetime',
+            'quantity'             => 'integer',
+            'metadata'             => 'array',
         ];
     }
 

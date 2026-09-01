@@ -11,6 +11,12 @@ return [
     'domain_model' => Domain::class,
 
     /**
+     * The primary central domain that tenant subdomains are registered under.
+     * Safe to read via config() after config:cache, unlike a runtime env() call.
+     */
+    'central_domain' => env('CENTRAL_DOMAIN', 'rental-management-saas.test'),
+
+    /**
      * The list of domains hosting your central app.
      *
      * Only relevant if you're using the domain or subdomain identification middleware.

@@ -12,7 +12,6 @@ use App\Enums\LedgerEntryType;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Enums\UnitStatus;
-use App\Models\BillingSettings;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\LateFee;
@@ -29,50 +28,29 @@ use Illuminate\Support\Carbon;
 
 class BillingSeeder extends Seeder
 {
-    public function run(): void
+    public function run(?User $admin = null): void
     {
-        $this->seedBillingSettings();
-        $this->seedLeasesAndBilling();
-    }
+        $admin ??= User::query()->oldest()->first();
 
-    // -------------------------------------------------------------------------
-    // Billing Settings
-    // -------------------------------------------------------------------------
+        if (! $admin) {
+            $this->command?->warn('  ! BillingSeeder skipped: no User in tenant DB.');
 
-    private function seedBillingSettings(): void
-    {
-        BillingSettings::updateOrCreate([], [
-            'currency'                  => 'PHP',
-            'timezone'                  => 'Asia/Manila',
-            'invoice_prefix'            => 'INV',
-            'invoice_number_format'     => '{PREFIX}-{YEAR}-{SEQ5}',
-            'grace_period_days'         => 3,
-            'auto_generate_invoices'    => true,
-            'auto_send_reminders'       => true,
-            'late_fee_enabled'          => true,
-            'late_fee_type'             => LateFeeType::Fixed->value,
-            'late_fee_amount'           => 500.00,
-            'late_fee_percentage'       => 5.00,
-            'apply_late_fee_after_days' => 1,
-            'compound_monthly'          => false,
-            'reminder_days_before'      => [7, 3, 1, -1, -7],
-            'reminder_channels'         => ['email', 'in_app'],
-        ]);
+            return;
+        }
 
-        $this->command->info('  ✓ Billing settings seeded.');
+        $this->seedLeasesAndBilling($admin);
     }
 
     // -------------------------------------------------------------------------
     // Leases + Invoices + Payments + Late Fees
     // -------------------------------------------------------------------------
 
-    private function seedLeasesAndBilling(): void
+    private function seedLeasesAndBilling(User $admin): void
     {
-        $admin   = User::first();
         $tenants = RentalTenant::all();
 
         if ($tenants->isEmpty()) {
-            $this->command->warn('  ! No tenants found. Run RentalTenantSeeder first.');
+            $this->command?->warn('  ! No tenants found. Run RentalTenantSeeder first.');
             return;
         }
 
@@ -91,7 +69,7 @@ class BillingSeeder extends Seeder
             $seq++;
         }
 
-        $this->command->info('  ✓ Leases, invoices, payments, and late fees seeded.');
+        $this->command?->info('  ✓ Leases, invoices, payments, and late fees seeded.');
     }
 
     private function ensureUnits(User $admin): \Illuminate\Support\Collection
@@ -100,7 +78,7 @@ class BillingSeeder extends Seeder
         $unitType = UnitType::first();
 
         if (! $property || ! $unitType) {
-            $this->command->warn('  ! No property or unit type found. Cannot create units.');
+            $this->command?->warn('  ! No property or unit type found. Cannot create units.');
             return collect();
         }
 
@@ -160,7 +138,7 @@ class BillingSeeder extends Seeder
 
         // Skip if this lease number already exists (idempotent)
         if (Lease::where('lease_number', $leaseNumber)->exists()) {
-            $this->command->warn("  ! Lease {$leaseNumber} already exists. Skipping.");
+            $this->command?->warn("  ! Lease {$leaseNumber} already exists. Skipping.");
             return;
         }
 

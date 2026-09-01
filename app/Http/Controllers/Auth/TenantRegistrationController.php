@@ -18,7 +18,7 @@ class TenantRegistrationController extends Controller
 {
     public function create(): InertiaResponse
     {
-        $centralDomain = env('CENTRAL_DOMAIN', config('tenancy.central_domains')[0]);
+        $centralDomain = config('tenancy.central_domain');
 
         return Inertia::render('auth/TenantRegister', [
             'passwordRules'      => Password::defaults()->toPasswordRulesString(),
@@ -60,8 +60,6 @@ class TenantRegistrationController extends Controller
             ]);
         }
 
-        $scheme = app()->environment('production') ? 'https' : 'http';
-
-        return Inertia::location("{$scheme}://{$domain->domain}/dashboard");
+        return Inertia::location("{$request->getScheme()}://{$domain->domain}/dashboard");
     }
 }

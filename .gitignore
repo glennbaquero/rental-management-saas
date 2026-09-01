@@ -28,3 +28,7 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+.env.before_lerd
+.lerd.yaml
+.node-version
+.php-version
